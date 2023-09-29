@@ -4,6 +4,7 @@ import os
 import argparse
 import subprocess
 import shutil
+import warnings
 from pathlib import Path
 
 from pdf2image import convert_from_path
@@ -64,15 +65,19 @@ def generate_pdf(equation, template_file="standalone", output_file=None, index=N
         file_handle.write(template)
 
     # --- Compile pdf ---
-    res = subprocess.run(
-        [
-            compiler,
-            Path(f"{file_name}.tex"),
-        ],
-        cwd="temp/",
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.STDOUT,
-    )
+    try:
+      res = subprocess.run(
+          [
+              compiler,
+              Path(f"{file_name}.tex"),
+          ],
+          cwd="temp/",
+          stdout=subprocess.DEVNULL,
+          stderr=subprocess.STDOUT,
+          timeout=10
+      )
+    except subprocess.TimeoutExpired as e:
+        warnings.warn(f"Compiler timed out on equation {file_name}, check log files")
 
     # --- Copy results to output directories ---
     if os.path.exists(Path("temp", f"{file_name}.pdf")):
@@ -81,7 +86,7 @@ def generate_pdf(equation, template_file="standalone", output_file=None, index=N
             Path(os.getcwd(), "pdf", f"{file_name}.pdf"),
         )
     else:
-        raise RuntimeWarning(f"{file_name}.pdf was not created.")
+        warnings.warn(f"{file_name}.pdf was not created.")
 
     if os.path.exists(Path("temp", f"{file_name}.log")):
         shutil.copyfile(
