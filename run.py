@@ -10,7 +10,7 @@ from pathlib import Path
 from pdf2image import convert_from_path
 from PIL import Image
 
-# Paths for latex generator and pdf to png tool
+# Path for latex compiler
 LATEX_COMPILER_PATH = "pdflatex"
 
 # Input and output file names
@@ -32,11 +32,11 @@ def generate_pdf(equation, template_file="standalone", output_file=None, index=N
     Args:
         equation (str): The latex equation string.
         template_file (str, optional): The name of the LaTeX template file 
-            without .tex extension
+            without .tex extension.
         output_file (str, optional): The name of the output PDF file.
         index (int, optional): An optional index when generating multiple 
             equations.
-        compiler (str): path of latex compiler
+        compiler (str): path of latex compiler.
 
     Returns:
         None
@@ -226,7 +226,7 @@ def main():
     os.makedirs("logs", exist_ok=True)  # Log files
     os.makedirs("pdf", exist_ok=True)  # Pdf files
     os.makedirs("png", exist_ok=True)  # Png files
-    os.makedirs("temp", exist_ok=True)  # Temp buiild files
+    os.makedirs("temp", exist_ok=True)  # Temp build files
 
     # --- Loop over equation in input files ---
     # Open file
