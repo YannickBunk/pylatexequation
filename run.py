@@ -12,18 +12,33 @@ from PIL import Image
 # Paths for latex generator and pdf to png tool
 LATEX_COMPILER_PATH = "pdflatex"
 
+# Input and output file names
 INPUT_FILE = "equation.eqs"
 OUTPUT_FILE = "equation"
 
-DPI = 150
-WIDTH = 600
+# Image resolution and width
+DPI = 250
+WIDTH = 800
 
+# Verbosity setting
 VERBOSITY = 1
 
 
-def generate_pdf(equation, template_file="standalone", output_file=None, index=None):
+def generate_pdf(equation, template_file="standalone", output_file=None, index=None, compiler=LATEX_COMPILER_PATH):
     """
-    Generate equation pdf from equation string
+    Generate pdf document for given equation string
+
+    Args:
+        equation (str): The latex equation string.
+        template_file (str, optional): The name of the LaTeX template file 
+            without .tex extension
+        output_file (str, optional): The name of the output PDF file.
+        index (int, optional): An optional index when generating multiple 
+            equations.
+        compiler (str): path of latex compiler
+
+    Returns:
+        None
     """
 
     # --- Get latex template ---
@@ -51,7 +66,7 @@ def generate_pdf(equation, template_file="standalone", output_file=None, index=N
     # --- Compile pdf ---
     res = subprocess.run(
         [
-            "pdflatex",
+            compiler,
             Path(f"{file_name}.tex"),
         ],
         cwd="temp/",
@@ -77,13 +92,24 @@ def generate_pdf(equation, template_file="standalone", output_file=None, index=N
     return
 
 
-def generate_png(output_file=None, index=None, dpi=150, width=600):
+def generate_png(output_file=None, index=None, dpi=DPI, width=WIDTH):
     """
-    Convert pdf files to png
+    Convert a PDF file to a PNG image.
+
+    Args:
+        output_file (str, optional): The name of the output PNG file.
+        index (int, optional): An optional index when generating multiple 
+            equations.
+        dpi (int, optional): The resolution (dots per inch) of the output image.
+        width (int, optional): The desired width of the output image in pixels.
+        
+    Returns:
+        None
+
     """
 
     # --- Create output file name ---
-    file_name = output_file
+    file_name = f"{output_file}"
     if file_name is None:
         file_name = "output"
 
@@ -97,10 +123,10 @@ def generate_png(output_file=None, index=None, dpi=150, width=600):
         single_file=True,
     )
 
-    image[0].save(Path(os.getcwd(), "png", f"{file_name}.png"), "PNG")
+    image[0].save(Path(os.getcwd(), "png", f"{file_name}@2x.png"), "PNG")
 
     # --- Resize png to requested width ---
-    image = Image.open(Path(os.getcwd(), "png", f"{file_name}.png"))
+    image = Image.open(Path(os.getcwd(), "png", f"{file_name}@2x.png"))
 
     image_width, image_height = image.size
 
@@ -119,7 +145,7 @@ def generate_png(output_file=None, index=None, dpi=150, width=600):
     top = 0
     result.paste(image, (left, top))
 
-    result.save(Path(os.getcwd(), "png", f"{file_name}.png"))
+    result.save(Path(os.getcwd(), "png", f"{file_name}@2x.png"))
 
     return
 
@@ -159,6 +185,7 @@ def main():
         help=f"Output dpi setting default {DPI}",
         required=False,
         default=DPI,
+        type=int
     )
 
     parser.add_argument(
@@ -167,6 +194,7 @@ def main():
         help=f"Image width default {WIDTH}",
         required=False,
         default=WIDTH,
+        type=int
     )
 
     parser.add_argument(
@@ -212,7 +240,7 @@ def main():
 
         for i, equation in enumerate(equations):
             # Create pdf
-            generate_pdf(equation, output_file=output_file, index=i)
+            generate_pdf(equation, output_file=output_file, index=i, compiler=latex_compiler)
 
             # Create png
             generate_png(output_file=output_file, index=i, dpi=dpi, width=width)
