@@ -1,6 +1,10 @@
 # run.py
 
+import os
 import argparse
+import subprocess
+import shutil
+from pathlib import Path
 
 # Paths for latex generator and pdf to png tool
 LATEX_COMPILER_PATH = "pdflatex"
@@ -14,8 +18,56 @@ DPI = 150
 VERBOSITY = 1
 
 
-def generate_pdf():
-    file_handle = open("templates/standalone.tex")
+def generate_pdf(equation, template_file="standalone", output_file=None, index=None):
+    """
+    Generate equation pdf from equation string
+    """
+
+    # --- Get latex template ---
+    template_file_path = Path(os.getcwd(), "templates", f"{template_file}.tex")
+    if not os.path.exists(template_file_path):
+        raise FileExistsError(f"Template file {template_file_path} does not exist")
+
+    with open(template_file_path) as file_handle:
+        template = file_handle.read()
+
+    # --- Create output file name ---
+    file_name = output_file
+    if file_name is None:
+        file_name = "output"
+
+    if index is not None:
+        file_name += f"_{index}"
+
+    # --- Generate tex file ---
+    template = template.replace("EQUATION", equation)
+
+    with open(Path(os.getcwd(), "temp", f"{file_name}.tex"), "w+") as file_handle:
+        file_handle.write(template)
+
+    # --- Compile pdf ---
+    res = subprocess.run(
+        [
+            "pdflatex",
+            Path(f"{file_name}.tex"),
+        ],
+        cwd="temp/",
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.STDOUT,
+    )
+
+    # --- Copy results to output directories ---
+    if os.path.exists(Path("temp", f"{file_name}.pdf")):
+        shutil.copyfile(
+            Path(os.getcwd(), "temp", f"{file_name}.pdf"),
+            Path(os.getcwd(), "pdf", f"{file_name}.pdf"),
+        )
+
+    if os.path.exists(Path("temp", f"{file_name}.log")):
+        shutil.copyfile(
+            Path(os.getcwd(), "temp", f"{file_name}.log"),
+            Path(os.getcwd(), "log", f"{file_name}.log"),
+        )
 
     return
 
@@ -70,6 +122,7 @@ def main():
         "--verbose",
         required=False,
         help=f"Verbosity integer; default -> {VERBOSITY}",
+        default=VERBOSITY,
     )
 
     # --- Parse command line arguments ---
@@ -84,7 +137,34 @@ def main():
     resolution = args["resolution"]
     verbose = args["verbose"]
 
+    # --- Create output folder ---
+    os.makedirs("logs", exist_ok=True)  # Log files
+    os.makedirs("pdf", exist_ok=True)  # Pdf files
+    os.makedirs("png", exist_ok=True)  # Png files
+    os.makedirs("temp", exist_ok=True)  # Temp buiild files
+
     # --- Loop over equation in input files ---
+    # Open file
+    input_file_path = Path(os.getcwd(), input_file)
+    if not os.path.exists(input_file_path):
+        raise FileExistsError(f"Input file {input_file_path} does not exist")
+
+    with open(input_file_path) as file_handle:
+        # Read equations
+        equations = file_handle.readlines()
+        n = len(equations)
+
+        # Print number of equations in file
+        if verbose > 0:
+            print(f"Found {n} equations in {input_file}")
+
+        for i, equation in enumerate(equations):
+            # Create pdf
+            generate_pdf(equation, output_file=output_file, index=i)
+
+            # Create png
+
+    # --- Remove temp build files ---
 
     return
 
