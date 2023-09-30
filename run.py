@@ -137,6 +137,7 @@ def generate_png(output_file=None, index=None, dpi=DPI, width=WIDTH):
 
     # Update width and height
     new_height = image_height
+    new_width = image_width
     if image_width < width:
         new_width = width
 
